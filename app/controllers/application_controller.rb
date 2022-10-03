@@ -1,2 +1,55 @@
 class ApplicationController < ActionController::Base
+  require "json"
+  require "open-uri"
+  GEOCODING_URL = "https://api.mapbox.com/geocoding/v5/mapbox.places/"
+  LIMIT = 6
+  PLACE_TYPE = "postcode"
+
+  def generate_json
+    category = params[:category].singularize
+    parsed_response = JSON.parse(call_geocoding_api(category))
+    result = group_by_place_type(
+      parsed_response['features'], PLACE_TYPE, category, LIMIT
+    )
+    render json: result
+  end
+
+  private
+
+  def call_geocoding_api(category)
+    proximity = "proximity=#{params[:lng]},#{params[:lat]}"
+    access_token = "access_token=#{ENV['MAPBOX_TOKEN']}"
+
+    query_string = "types=poi&limit=10&#{proximity}&#{access_token}"
+    URI.parse("#{GEOCODING_URL}#{category}.json?#{query_string}").open.read
+  end
+
+  def group_by_place_type(pois, place_type, category, limit)
+    empty_hash = Hash.new {|hash, key| hash[key] = []}
+    n = 0
+    pois.each_with_object(empty_hash) do |poi, result|
+      return result if n >= limit
+      next unless in_category?(poi, category)
+
+      postcode = find_place(poi, place_type)
+      result[postcode] << poi["text"]
+      n += 1
+    end
+  end
+
+  def in_category?(poi, category)
+    categories = poi['properties']['category'].split(', ')
+    categories.include?(category)
+  end
+
+  def find_place(poi, place_type)
+    poi['context'].find do |place|
+      extract_place_type(place['id']) == place_type
+    end['text']
+  end
+
+  def extract_place_type(place_id)
+    place_id.split('.').first
+  end
+
 end
