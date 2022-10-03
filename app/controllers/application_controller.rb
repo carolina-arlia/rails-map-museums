@@ -19,7 +19,7 @@ class ApplicationController < ActionController::Base
 
     json = call_geocoding_api(lng, lat)
 
-    get_data_from_json(json)
+    render json: get_data_from_json(json)
 
   end
 
@@ -34,14 +34,19 @@ class ApplicationController < ActionController::Base
   end
 
   def get_data_from_json(json)
+    hash_data = Hash.new()
     json['features'].each do |museum|
       name = museum['text']
       cp = museum['context'][0]['text']
 
-      puts name
-      puts cp
+      if hash_data.key?(cp)
+        hash_data[cp] << name
+      else
+        hash_data[cp] = [name]
+      end
     end
 
+    return hash_data
   end
 
   def group_by_place_type(pois, place_type, category, limit)
