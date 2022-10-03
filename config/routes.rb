@@ -3,5 +3,5 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "articles#index"
-  get ':category', to: 'application#generate_json'
+  get 'museums', to: 'application#generate_json'
 end

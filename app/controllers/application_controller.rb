@@ -6,22 +6,42 @@ class ApplicationController < ActionController::Base
   PLACE_TYPE = "postcode"
 
   def generate_json
-    category = params[:category].singularize
-    parsed_response = JSON.parse(call_geocoding_api(category))
-    result = group_by_place_type(
-      parsed_response['features'], PLACE_TYPE, category, LIMIT
-    )
-    render json: result
+    # category = params[:category].singularize
+    # parsed_response = JSON.parse(call_geocoding_api(category))
+    # result = group_by_place_type(
+    #   parsed_response['features'], PLACE_TYPE, category, LIMIT
+    # )
+    # render json: result
+
+
+    lng = params[:lng]
+    lat = params[:lat]
+
+    json = call_geocoding_api(lng, lat)
+
+    get_data_from_json(json)
+
   end
 
   private
 
-  def call_geocoding_api(category)
-    proximity = "proximity=#{params[:lng]},#{params[:lat]}"
-    access_token = "access_token=#{ENV['MAPBOX_TOKEN']}"
+  def call_geocoding_api(lng, lat)
+    proximity = "proximity=#{lng},#{lat}"
+    access_token = "access_token=#{ENV['MAPBOX_API_KEY']}"
 
     query_string = "types=poi&limit=10&#{proximity}&#{access_token}"
-    URI.parse("#{GEOCODING_URL}#{category}.json?#{query_string}").open.read
+    JSON.parse(URI.parse("#{GEOCODING_URL}museum.json?#{query_string}").open.read)
+  end
+
+  def get_data_from_json(json)
+    json['features'].each do |museum|
+      name = museum['text']
+      cp = museum['context'][0]['text']
+
+      puts name
+      puts cp
+    end
+
   end
 
   def group_by_place_type(pois, place_type, category, limit)
