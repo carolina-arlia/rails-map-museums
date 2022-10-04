@@ -7,6 +7,8 @@ class ApplicationController < ActionController::Base
     lng = params[:lng]
     lat = params[:lat]
 
+    service_museums = GenerateJsonMuseums.new(lng, lat)
+
     json = JSON.parse(call_geocoding_api(lng, lat))
 
     render json: get_data_from_json(json)
