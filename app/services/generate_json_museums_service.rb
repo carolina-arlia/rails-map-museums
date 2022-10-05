@@ -1,15 +1,25 @@
-class GenerateJsonMuseums
+class GenerateJsonMuseumsService
+  require "json"
+  attr_reader :lng, :lat
 
+  # we receive all parameters in the initialization
   def initialize(lng, lat)
     @lng = lng
     @lat = lat
+  end
 
-    service = CallGeocodingApi.new(@lng, @lat)
+  def generate_json_museum
+    service_mapbox = CallGeocodingApiService.new(@lng, @lat)
+    result_api = service_mapbox.call_geocoding_api
+
+    json = JSON.parse(result_api)
+
+    order_data_from_json(json)
   end
 
   private
 
-  def get_data_from_json(json)
+  def order_data_from_json(json)
     hash_data = Hash.new()
     json['features'].each do |museum|
       name = museum['text']
